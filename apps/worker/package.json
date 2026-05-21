@@ -1,0 +1,19 @@
+{
+  "name": "@veda-ai/worker",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "bullmq": "5.52.0",
+    "ioredis": "5.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "tsx": "4.19.4",
+    "typescript": "5.8.3"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

@@ -1,0 +1,13 @@
+export type WebSocketEventName =
+	| 'assignment:queued'
+	| 'assignment:processing'
+	| 'assignment:completed'
+	| 'assignment:failed';
+
+export interface WebSocketEventPayloadMap {
+	'assignment:queued': { assignmentId: string };
+	'assignment:processing': { assignmentId: string; progress: number };
+	'assignment:completed': { assignmentId: string; paperId: string };
+	'assignment:failed': { assignmentId: string; reason: string };
+}
+export {};

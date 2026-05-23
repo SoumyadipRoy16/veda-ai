@@ -62,42 +62,13 @@ jobs:
       - name: Build all packages
         run: npm run build
 
-  deploy-frontend:
-    name: Deploy Frontend to Vercel
+  validate:
+    name: Validate Build
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Deploy to Vercel
-        uses: vercel/action@main
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
-          working-directory: ./apps/web
-
-  deploy-backend:
-    name: Deploy Backend to Railway
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Deploy to Railway
-        uses: denoland/deployctl@v1
-        with:
-          project: veda-ai
-          token: ${{ secrets.RAILWAY_TOKEN }}
-
-  notify:
-    name: Notify Deployment
-    needs: [deploy-frontend, deploy-backend]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Deployment Status
-        run: |
+      - name: Build Successful
+        run: echo "✅ All validations passed. Vercel and Railway will deploy automatically."
           if [ "${{ needs.deploy-frontend.result }}" = "success" ] && [ "${{ needs.deploy-backend.result }}" = "success" ]; then
             echo "✅ Deployment successful!"
           else

@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "npm run build --workspace @veda-ai/web",
-  "outputDirectory": "apps/web/.next",
   "public": false,
   "headers": [
     {

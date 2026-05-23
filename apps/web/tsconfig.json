@@ -8,6 +8,11 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@shared/*": ["../../packages/shared/src/*"]
+    },
     "incremental": true,
     "isolatedModules": true
   },

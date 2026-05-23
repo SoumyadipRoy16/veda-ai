@@ -5,6 +5,7 @@ export interface GeneratedQuestion {
 	text: string;
 	marks: number;
 	difficulty: DifficultyLevel;
+	answer?: string;
 }
 
 export interface GeneratedSection {
@@ -20,5 +21,7 @@ export interface GeneratedPaper {
 	totalMarks: number;
 	totalTimeMinutes: number;
 	sections: GeneratedSection[];
+	answerKey?: GeneratedQuestion[];
+	notes?: string[];
 }
 export {};

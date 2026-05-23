@@ -1,88 +1,87 @@
+"use client";
+
 import {
   ArrowLeft,
   Bell,
-  BookOpen,
-  FileText,
+  BookMarked,
+  ChartPie,
+  ChevronDown,
+  ClipboardList,
   Grid2X2,
   LayoutGrid,
-  LibraryBig,
   Menu,
   Plus,
   Settings,
   Sparkles,
+  UsersRound,
 } from 'lucide-react';
 
 import { SchoolAvatar } from '../src/components/avatar/school-avatar';
-
-const desktopAssignments = [
-  { title: 'Quiz on Electricity', assignedOn: '20-06-2025', due: '21-06-2025' },
-  { title: 'Quiz on Electricity', assignedOn: '20-06-2025', due: '21-06-2025' },
-  { title: 'Quiz on Electricity', assignedOn: '20-06-2025', due: '21-06-2025' },
-  { title: 'Quiz on Electricity', assignedOn: '20-06-2025', due: '21-06-2025' },
-  { title: 'Quiz on Electricity', assignedOn: '20-06-2025', due: '21-06-2025' },
-  { title: 'Quiz on Electricity', assignedOn: '20-06-2025', due: '21-06-2025' },
-];
-
-const mobileAssignments = Array.from({ length: 5 }, () => ({
-  title: 'Quiz on Electricity',
-  assignedOn: '20-06-2025',
-  due: '21-06-2025',
-}));
+import { AssignmentWorkspace } from '../src/components/assignment/assignment-workspace';
+import { ToastContainer } from '../src/components/toast-container';
+import { useAssignmentStore } from '../src/store/assignment-store';
 
 const sidebarItems = [
   { icon: Grid2X2, label: 'Home' },
-  { icon: LayoutGrid, label: 'My Groups' },
-  { icon: FileText, label: 'Assignments', active: true, badge: '10' },
-  { icon: Sparkles, label: "AI Teacher's Toolkit" },
-  { icon: LibraryBig, label: 'My Library' },
+  { icon: UsersRound, label: 'My Groups' },
+  { icon: ClipboardList, label: 'Assignments', assignmentList: true },
+  { icon: BookMarked, label: "AI Teacher's Toolkit" },
+  { icon: ChartPie, label: 'My Library' },
 ];
 
 const bottomNavItems = [
   { icon: Grid2X2, label: 'Home' },
-  { icon: FileText, label: 'Assignments', active: true },
-  { icon: BookOpen, label: 'Library' },
+  { icon: ClipboardList, label: 'Assignments', assignmentList: true },
+  { icon: BookMarked, label: 'Library' },
   { icon: Sparkles, label: 'AI Toolkit' },
 ];
 
 export default function HomePage() {
+  const openBuilder = useAssignmentStore((state) => state.openBuilder);
+  const openEmpty = useAssignmentStore((state) => state.openEmpty);
+  const step = useAssignmentStore((state) => state.step);
+  const assignmentListOpen = step === 'empty';
+
   return (
     <main className="page-shell">
       <aside className="sidebar desktop-only">
         <div className="brand-row">
-          <div className="brand-mark">
-            <span>V</span>
-          </div>
+          <img className="brand-image brand-image-desktop" src="/brand-desktop.png" alt="VedaAI" />
           <div className="brand-wordmark">VedaAI</div>
         </div>
 
-        <button className="primary-action">
+        <button className="primary-action" style={{ marginBottom: 26 }} aria-label="Create assignment" onClick={openBuilder}>
           <Sparkles size={16} />
           <span>Create Assignment</span>
         </button>
 
         <nav className="nav-list" aria-label="Primary">
-          {sidebarItems.map(({ icon: Icon, label, active, badge }) => (
-            <div className={`nav-item ${active ? 'nav-item-active' : ''}`} key={label}>
+          {sidebarItems.map(({ icon: Icon, label, assignmentList }) => (
+            <button
+              className={`nav-item ${assignmentList && assignmentListOpen ? 'nav-item-active' : ''}`}
+              key={label}
+              type="button"
+              onClick={assignmentList ? openEmpty : undefined}
+            >
               <span className="nav-icon">
                 <Icon size={16} strokeWidth={2} />
               </span>
               <span className="nav-label">{label}</span>
-              {badge ? <span className="nav-badge">{badge}</span> : null}
-            </div>
+            </button>
           ))}
         </nav>
 
         <div className="sidebar-footer">
-          <div className="nav-item settings-item">
+          <button className="nav-item settings-item" type="button">
             <span className="nav-icon">
               <Settings size={16} strokeWidth={2} />
             </span>
             <span className="nav-label">Settings</span>
-          </div>
+          </button>
 
           <div className="school-card">
             <div className="school-avatar">
-              <SchoolAvatar label="Delhi Public School avatar" />
+              <SchoolAvatar label="Delhi Public School avatar" size={96} />
             </div>
             <div>
               <div className="school-name">Delhi Public School</div>
@@ -94,7 +93,7 @@ export default function HomePage() {
 
       <section className="content-shell desktop-content">
         <header className="topbar desktop-topbar">
-          <div className="topbar-left">
+          <button className="topbar-left topbar-back-button" type="button" onClick={openEmpty} aria-label="Back to assignments">
             <ArrowLeft size={22} strokeWidth={2} />
             <div className="topbar-crumb">
               <span className="crumb-icon">
@@ -102,7 +101,7 @@ export default function HomePage() {
               </span>
               <span>Assignment</span>
             </div>
-          </div>
+          </button>
 
           <div className="topbar-right">
             <button className="icon-button" aria-label="Notifications">
@@ -110,127 +109,61 @@ export default function HomePage() {
               <span className="notification-dot" />
             </button>
             <button className="profile-pill" aria-label="User menu">
-              <span className="profile-avatar">👩‍🏫</span>
-              <span>John Doe</span>
-              <span className="profile-caret">⌄</span>
+              <span className="profile-avatar">
+                <SchoolAvatar label="Delhi Public School avatar" size={40} />
+              </span>
+              <span className="profile-name">School Admin</span>
+              <ChevronDown className="profile-caret" size={22} strokeWidth={2} />
             </button>
           </div>
         </header>
 
-        <section className="page-section-header">
-          <div className="section-title-row">
-            <span className="status-dot" />
-            <div>
-              <h1>Assignments</h1>
-              <p>Manage and create assignments for your classes.</p>
-            </div>
-          </div>
-
-          <div className="section-tools">
-            <button className="filter-pill">
-              <span className="filter-icon">⛃</span>
-              <span>Filter By</span>
-            </button>
-            <label className="search-pill" aria-label="Search Assignment">
-              <span>⌕</span>
-              <input type="text" placeholder="Search Assignment" readOnly />
-            </label>
-          </div>
-        </section>
-
-        <section className="desktop-grid" aria-label="Assignment cards">
-          {desktopAssignments.map((card, index) => (
-            <article className="assignment-card" key={`${card.title}-${index}`}>
-              <button className="card-menu" aria-label="Open assignment menu">
-                ⋮
-              </button>
-              <h2>{card.title}</h2>
-              <div className="card-meta-row">
-                <p>
-                  <strong>Assigned on :</strong> {card.assignedOn}
-                </p>
-                <p>
-                  <strong>Due :</strong> {card.due}
-                </p>
-              </div>
-            </article>
-          ))}
-        </section>
-
-        <button className="floating-create-button desktop-only" aria-label="Create assignment">
-          <Plus size={18} strokeWidth={2.5} />
-          <span>Create Assignment</span>
-        </button>
+        <AssignmentWorkspace variant="desktop" />
       </section>
 
       <section className="content-shell mobile-content">
         <header className="mobile-topbar">
           <div className="mobile-brand-row">
-            <div className="brand-mark mobile-brand-mark">V</div>
-            <div className="brand-wordmark">VedaAI</div>
+            <img className="brand-image brand-image-mobile" src="/brand-mobile.png" alt="VedaAI" />
+            <div className="brand-wordmark mobile-brand-wordmark">VedaAI</div>
           </div>
           <div className="mobile-topbar-actions">
             <button className="icon-button" aria-label="Notifications">
               <Bell size={18} strokeWidth={2} />
               <span className="notification-dot" />
             </button>
-            <div className="profile-avatar profile-avatar-small">👩‍🏫</div>
+            <div className="profile-avatar profile-avatar-small">
+              <SchoolAvatar label="Delhi Public School avatar" size={32} />
+            </div>
             <button className="icon-button" aria-label="Open menu">
               <Menu size={20} strokeWidth={2} />
             </button>
           </div>
         </header>
 
-        <div className="mobile-subheader">
-          <button className="back-pill" aria-label="Back">
-            <ArrowLeft size={20} strokeWidth={2} />
+        <AssignmentWorkspace variant="mobile" />
+
+        {step === 'empty' ? (
+          <button className="floating-create-button mobile-fab" aria-label="Create assignment" onClick={openBuilder}>
+            <Plus size={20} strokeWidth={1.6} />
           </button>
-          <span>Assignments</span>
-        </div>
-
-        <div className="mobile-tools">
-          <button className="filter-pill mobile-filter">
-            <span>⛃</span>
-            <span>Filter</span>
-          </button>
-          <label className="search-pill mobile-search" aria-label="Search Name">
-            <span>⌕</span>
-            <input type="text" placeholder="Search Name" readOnly />
-          </label>
-        </div>
-
-        <section className="mobile-list" aria-label="Mobile assignment cards">
-          {mobileAssignments.map((card, index) => (
-            <article className="mobile-card" key={`${card.title}-${index}`}>
-              <button className="card-menu" aria-label="Open assignment menu">
-                ⋮
-              </button>
-              <h2>{card.title}</h2>
-              <div className="mobile-card-meta">
-                <p>
-                  <strong>Assigned on :</strong> {card.assignedOn}
-                </p>
-                <p>
-                  <strong>Due :</strong> {card.due}
-                </p>
-              </div>
-            </article>
-          ))}
-        </section>
-
-        <button className="floating-create-button mobile-fab" aria-label="Create assignment">
-          <Plus size={20} strokeWidth={2.5} />
-        </button>
+        ) : null}
 
         <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
-          {bottomNavItems.map(({ icon: Icon, label, active }) => (
-            <button className={`bottom-nav-item ${active ? 'bottom-nav-item-active' : ''}`} key={label}>
+          {bottomNavItems.map(({ icon: Icon, label, assignmentList }) => (
+            <button
+              className={`bottom-nav-item ${assignmentList && assignmentListOpen ? 'bottom-nav-item-active' : ''}`}
+              key={label}
+              type="button"
+              onClick={assignmentList ? openEmpty : undefined}
+            >
               <Icon size={18} strokeWidth={2} />
               <span>{label}</span>
             </button>
           ))}
         </nav>
       </section>
+      <ToastContainer />
     </main>
   );
 }

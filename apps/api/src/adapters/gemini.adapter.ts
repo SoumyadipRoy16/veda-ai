@@ -1,1 +1,66 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+import { env } from '../config/env';
+import type { AssignmentGenerationRequest } from '@shared/schemas/assignment';
+import { buildStructuredAssignmentPrompt, extractJsonPayload, normalizeGeneratedPaper } from '@shared/workflow/assignment-generation';
+
+async function analyzeReferenceDocument(dataUrl: string, mimeType: string): Promise<string> {
+	if (!env.GEMINI_API_KEY) {
+		throw new Error('GEMINI_API_KEY is required to analyze reference documents');
+	}
+
+	try {
+		// Extract base64 from data URL
+		const base64Data = dataUrl.split(',')[1];
+		if (!base64Data) {
+			return '';
+		}
+
+		const client = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+		const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+		const response = await model.generateContent([
+			{
+				inlineData: {
+					mimeType: mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+					data: base64Data,
+				},
+			},
+			{
+				text: 'Analyze this question paper or document. Describe: (1) The overall structure and layout, (2) Types of questions asked, (3) Marking scheme pattern, (4) Language level and style, (5) Any special formatting or sections. Be concise.',
+			},
+		]);
+
+		const analysis = response.response.text();
+		return analysis || '';
+	} catch (error) {
+		console.error('Failed to analyze reference document:', error);
+		return '';
+	}
+}
+
+export async function generatePaperWithGemini(request: AssignmentGenerationRequest) {
+	if (!env.GEMINI_API_KEY) {
+		throw new Error('GEMINI_API_KEY is required to generate an assignment');
+	}
+
+	// Analyze reference document if provided
+	let referenceDocumentAnalysis = '';
+	if (request.draft.sourceAttachment) {
+		referenceDocumentAnalysis = await analyzeReferenceDocument(
+			request.draft.sourceAttachment.dataUrl,
+			request.draft.sourceAttachment.mimeType,
+		);
+	}
+
+	const client = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+	const model = client.getGenerativeModel({ model: env.GEMINI_MODEL });
+	const structuredPrompt = buildStructuredAssignmentPrompt(request, env.GEMINI_MODEL, referenceDocumentAnalysis);
+	const response = await model.generateContent(structuredPrompt.prompt);
+	const rawText = response.response.text();
+	const jsonPayload = extractJsonPayload(rawText);
+
+	return normalizeGeneratedPaper(JSON.parse(jsonPayload));
+}
+
 export {};

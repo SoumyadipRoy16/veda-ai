@@ -21,7 +21,12 @@ function createSeed() {
   return `avatar-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function SchoolAvatar({ label }: { label: string }) {
+type SchoolAvatarProps = {
+  label: string;
+  size?: number;
+};
+
+export function SchoolAvatar({ label, size = 96 }: SchoolAvatarProps) {
   const { avatarSeed, avatarStyle, setAvatar } = useUiStore();
 
   useEffect(() => {
@@ -42,11 +47,11 @@ export function SchoolAvatar({ label }: { label: string }) {
       seed,
       backgroundColor: ['f7f2ed'],
       radius: 50,
-      size: 96,
+      size,
     });
 
     return `data:image/svg+xml;utf8,${encodeURIComponent(avatar.toString())}`;
-  }, [avatarSeed, avatarStyle]);
+  }, [avatarSeed, avatarStyle, size]);
 
   return <img className="school-avatar-image" alt={label} src={src} />;
 }

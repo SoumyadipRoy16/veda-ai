@@ -305,7 +305,7 @@ empty → builder → confirmation → generating → result
             ▲                           |
             |___________________________|
                     
-                    (return to builder)
+                (return to builder)
 ```
 
 The store is persisted to `localStorage` under the key `veda-ai-assignment-workflow` (step, catalog, and draft only — never sensitive data or binary assets). This means a teacher can close the tab mid-form and resume where they left off.

@@ -145,11 +145,16 @@ export function validateMimeType(
 }
 
 /**
- * Sanitize object keys and values recursively (1 level deep)
+ * Sanitize object keys and values recursively
  */
 export function sanitizeObject<T extends Record<string, unknown>>(obj: unknown): Partial<T> {
-	if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+	if (typeof obj !== 'object' || obj === null) {
 		return {};
+	}
+
+	// Handle arrays
+	if (Array.isArray(obj)) {
+		return obj.map((item) => sanitizeObject(item)) as any;
 	}
 
 	const sanitized: Record<string, unknown> = {};
@@ -167,8 +172,10 @@ export function sanitizeObject<T extends Record<string, unknown>>(obj: unknown):
 			sanitized[safeKey] = value;
 		} else if (value === null) {
 			sanitized[safeKey] = null;
+		} else if (typeof value === 'object' && value !== null) {
+			// Recursively sanitize nested objects and arrays
+			sanitized[safeKey] = sanitizeObject(value);
 		}
-		// Skip arrays and objects for recursive sanitization
 	}
 
 	return sanitized as Partial<T>;

@@ -38,33 +38,35 @@ export function AssignmentQuestionRow({
 			</div>
 
 			<button className="question-row-remove" type="button" aria-label={`Remove question type ${index + 1}`} onClick={onRemove}>
-				<X size={13} strokeWidth={2.2} />
+				<X size={13} strokeWidth={2} />
 			</button>
 
-			<div className="question-row-stepper question-row-count">
-				<span className="question-row-label">No. of Questions</span>
-				<div className="counter-pill">
-					<button type="button" onClick={() => onCountChange(Math.max(1, row.count - 1))} aria-label="Decrease question count">
-						<Minus size={12} />
-					</button>
-					<span>{row.count}</span>
-					<button type="button" onClick={() => onCountChange(row.count + 1)} aria-label="Increase question count">
-						<Plus size={12} />
-					</button>
-				</div>
-			</div>
+			<div className="question-row-controls">
+				<div className="question-row-stepper question-row-count">
+					<span className="question-row-label">No. of Questions</span>
+					<div className="counter-pill">
+						<button type="button" onClick={() => onCountChange(Math.max(1, row.count - 1))} aria-label="Decrease question count">
+							<Minus size={12} strokeWidth={2.2}/>
+						</button>
+						<span>{row.count}</span>
+						<button type="button" onClick={() => onCountChange(row.count + 1)} aria-label="Increase question count">
+							<Plus size={12} strokeWidth={2.2}/>
+						</button>
+						</div>
+					</div>
 
-			<div className="question-row-stepper question-row-marks">
-				<span className="question-row-label">Marks</span>
-				<div className="counter-pill">
-					<button type="button" onClick={() => onMarksChange(Math.max(1, row.marksPerQuestion - 1))} aria-label="Decrease marks">
-						<Minus size={12} />
-					</button>
-					<span>{row.marksPerQuestion}</span>
-					<button type="button" onClick={() => onMarksChange(row.marksPerQuestion + 1)} aria-label="Increase marks">
-						<Plus size={12} />
-					</button>
-				</div>
+					<div className="question-row-stepper question-row-marks">
+						<span className="question-row-label">Marks</span>
+						<div className="counter-pill">
+							<button type="button" onClick={() => onMarksChange(Math.max(1, row.marksPerQuestion - 1))} aria-label="Decrease marks">
+								<Minus size={12} />
+							</button>
+							<span>{row.marksPerQuestion}</span>
+							<button type="button" onClick={() => onMarksChange(row.marksPerQuestion + 1)} aria-label="Increase marks">
+								<Plus size={12} />
+							</button>
+						</div>
+					</div>
 			</div>
 
 		</div>

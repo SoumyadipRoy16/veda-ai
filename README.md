@@ -66,34 +66,34 @@ VedaAI follows a **three-tier, event-driven monorepo architecture**. The fronten
 │                          BROWSER (Next.js)                          │
 │                                                                     │
 │  ┌──────────────┐   REST /api   ┌──────────────┐   ws://…/ws        │
-│  │  Zustand     │ ◄───────────► │  Express API  │ ◄──────────────   │
-│  │  Store       │               │  :4001        │                   │
-│  └──────────────┘               └──────┬────────┘                   │
+│  │  Zustand     │ ◄───────────► │  Express API │  ◄──────────────   │
+│  │  Store       │               │  :4001       │                    │
+│  └──────────────┘               └──────┬───────┘                    │
 │                                        │                            │
-│                               ┌────────┴────────┐                   │
+│                               ┌────────┴─────────┐                  │
 │                               │    MongoDB       │                  │
 │                               │  (Assignments,   │                  │
 │                               │  GeneratedPapers,│                  │
 │                               │  MediaAssets,    │                  │
 │                               │  QuestionTypes)  │                  │
-│                               └────────┬────────┘                   │
+│                               └────────┬─────────┘                  │
 │                                        │                            │
 │                          ┌─────────────┴──────────────┐             │
-│                          │        Redis / BullMQ        │           │
-│                          │   Queue: assignment-generation│          │
+│                          │       Redis / BullMQ       │             │
+│                          │Queue: assignment-generation│             │
 │                          └─────────────┬──────────────┘             │
 │                                        │                            │
 │                          ┌─────────────▼──────────────┐             │
-│                          │       Background Worker      │           │
-│                          │  (generate-assignment.job)   │           │
-│                          │                              │           │
-│                          │  1. Build structured prompt  │           │
-│                          │  2. Call Gemini 2.0 Flash    │           │
-│                          │  3. Parse + normalize JSON   │           │
-│                          │  4. Persist GeneratedPaper   │           │
-│                          │  5. Cache PDF buffer         │           │
-│                          │  6. Broadcast WS event       │           │
-│                          └──────────────────────────────┘           │
+│                          │       Background Worker    │             │
+│                          │  (generate-assignment.job) │             │
+│                          │                            │             │
+│                          │  1. Build structured prompt│             │
+│                          │  2. Call Gemini 2.0 Flash  │             │
+│                          │  3. Parse + normalize JSON │             │
+│                          │  4. Persist GeneratedPaper │             │
+│                          │  5. Cache PDF buffer       │             │
+│                          │  6. Broadcast WS event     │             │
+│                          └────────────────────────────┘             │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -459,6 +459,64 @@ CORS_ORIGIN=*
 ```
 
 > The env schema is validated with Zod at startup (`apps/api/src/config/env.ts`). The server will exit immediately if required variables are missing or malformed.
+
+---
+
+## Security & Input Sanitization
+
+VedaAI implements comprehensive input sanitization and validation to prevent XSS, injection attacks, and malicious payloads:
+
+### Backend Security (`apps/api/`)
+
+**Sanitization Middleware** (`src/middleware/sanitization.middleware.ts`):
+- Automatically sanitizes all incoming request bodies, URL parameters, and query strings
+- Removes control characters and escapes HTML special characters
+- Prevents directory traversal and null byte injection
+
+**Input Validation** (`src/validators/assignment.validator.ts`):
+- Validates assignment payload structure and constraints
+- Enforces field length limits (e.g., title ≤ 255 chars, instructions ≤ 5000 chars)
+- Validates date formats (YYYY-MM-DD)
+- Constrains question counts (1-100) and marks (1-100)
+- Validates MongoDB ObjectId format for all resource IDs
+
+**Controller Error Handling**:
+- All endpoints validate input before processing
+- Returns 400 Bad Request for invalid data
+- Returns 404 Not Found for invalid ObjectIds
+- Includes detailed error messages for debugging
+
+### Frontend Security (`apps/web/`)
+
+**Form Input Sanitization** (`src/lib/useSanitization.ts`):
+- `sanitizeFormInput()`: Sanitizes string inputs, removes malicious characters
+- `sanitizeAndValidateFile()`: Validates file types and size limits before upload
+- `sanitizeFormData()`: Recursively sanitizes form object properties
+
+**File Upload Validation**:
+- Enforces file type whitelist: JPEG, PNG, PDF, TXT
+- File size limit: 10 MB
+- Filenames sanitized to prevent path traversal (`/`, `\`, `..`, special chars)
+- MIME type validation against allowed types
+
+**Shared Utilities** (`packages/shared/utils/sanitize.ts`):
+- `sanitizeString()`: Escapes HTML entities, removes control characters
+- `sanitizeText()`: Removes null bytes and control chars (preserves formatting)
+- `sanitizeEmail()`: Validates email format
+- `sanitizeUrl()`: Blocks dangerous protocols (javascript:, data:, vbscript:)
+- `sanitizeNumber()`: Enforces min/max constraints
+- `sanitizeFilename()`: Prevents directory traversal, limits length to 255 chars
+- `validateMimeType()`: Checks file type against whitelist
+
+### Best Practices Applied
+
+✅ **All user input is sanitized at multiple layers** (frontend validation + backend middleware + specific validators)
+✅ **MongoDB injection prevention** via Mongoose schema validation + input sanitization
+✅ **XSS prevention** via HTML entity escaping on all string inputs
+✅ **File upload security** via whitelist validation + filename sanitization
+✅ **Error messages** are informative but don't expose sensitive system details
+✅ **Type safety** via TypeScript across all layers
+✅ **Environment variables** validated with Zod at startup
 
 ---
 

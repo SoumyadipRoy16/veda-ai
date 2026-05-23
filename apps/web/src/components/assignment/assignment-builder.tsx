@@ -5,8 +5,11 @@ import { useMemo } from 'react';
 
 import type { UploadedAssetPayload } from '@shared/schemas/assignment';
 import { calculateTotals } from '@shared/workflow/assignment-generation';
+import { sanitizeFilename } from '@shared/utils/sanitize';
 
 import { useAssignmentStore } from '../../store/assignment-store';
+import { useNotificationStore } from '../../store/notification-store';
+import { useSanitization } from '../../lib/useSanitization';
 import { AssignmentQuestionRow } from './assignment-question-row';
 
 type Props = {
@@ -17,7 +20,7 @@ type Props = {
 
 function toAssetPayload(file: File, dataUrl: string): UploadedAssetPayload {
 	return {
-		fileName: file.name,
+		fileName: sanitizeFilename(file.name),
 		mimeType: file.type || 'application/octet-stream',
 		dataUrl,
 		sizeBytes: file.size,
@@ -35,6 +38,8 @@ async function readFileAsDataUrl(file: File) {
 
 export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: Props) {
 	const { draft, questionTypeCatalog, updateDraftField, updateQuestionType, addQuestionType, removeQuestionType, setSourceAttachment } = useAssignmentStore();
+	const { addToast } = useNotificationStore();
+	const { sanitizeAndValidateFile } = useSanitization();
 	const totals = useMemo(() => calculateTotals(draft), [draft]);
 
 	async function handleFileChange(file: File | null) {
@@ -43,8 +48,16 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 			return;
 		}
 
+		// Validate file
+		const validation = sanitizeAndValidateFile(file);
+		if (!validation.valid) {
+			addToast(validation.error || 'Invalid file', 'error');
+			return;
+		}
+
 		const dataUrl = await readFileAsDataUrl(file);
 		setSourceAttachment(toAssetPayload(file, dataUrl));
+		addToast(`File "${validation.filename}" uploaded successfully`, 'success');
 	}
 
 	return (

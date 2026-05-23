@@ -65,34 +65,34 @@ VedaAI follows a **three-tier, event-driven monorepo architecture**. The fronten
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          BROWSER (Next.js)                          │
 │                                                                     │
-│  ┌──────────────┐   REST /api   ┌──────────────┐   ws://…/ws       │
+│  ┌──────────────┐   REST /api   ┌──────────────┐   ws://…/ws        │
 │  │  Zustand     │ ◄───────────► │  Express API  │ ◄──────────────   │
 │  │  Store       │               │  :4001        │                   │
-│  └──────────────┘               └──────┬────────┘                  │
+│  └──────────────┘               └──────┬────────┘                   │
 │                                        │                            │
-│                               ┌────────┴────────┐                  │
+│                               ┌────────┴────────┐                   │
 │                               │    MongoDB       │                  │
 │                               │  (Assignments,   │                  │
 │                               │  GeneratedPapers,│                  │
 │                               │  MediaAssets,    │                  │
 │                               │  QuestionTypes)  │                  │
-│                               └────────┬────────┘                  │
+│                               └────────┬────────┘                   │
 │                                        │                            │
-│                          ┌─────────────┴──────────────┐            │
-│                          │        Redis / BullMQ        │            │
-│                          │   Queue: assignment-generation│            │
-│                          └─────────────┬──────────────┘            │
+│                          ┌─────────────┴──────────────┐             │
+│                          │        Redis / BullMQ        │           │
+│                          │   Queue: assignment-generation│          │
+│                          └─────────────┬──────────────┘             │
 │                                        │                            │
-│                          ┌─────────────▼──────────────┐            │
-│                          │       Background Worker      │            │
-│                          │  (generate-assignment.job)   │            │
-│                          │                              │            │
-│                          │  1. Build structured prompt  │            │
-│                          │  2. Call Gemini 2.0 Flash    │            │
-│                          │  3. Parse + normalize JSON   │            │
-│                          │  4. Persist GeneratedPaper   │            │
-│                          │  5. Cache PDF buffer         │            │
-│                          │  6. Broadcast WS event       │            │
+│                          ┌─────────────▼──────────────┐             │
+│                          │       Background Worker      │           │
+│                          │  (generate-assignment.job)   │           │
+│                          │                              │           │
+│                          │  1. Build structured prompt  │           │
+│                          │  2. Call Gemini 2.0 Flash    │           │
+│                          │  3. Parse + normalize JSON   │           │
+│                          │  4. Persist GeneratedPaper   │           │
+│                          │  5. Cache PDF buffer         │           │
+│                          │  6. Broadcast WS event       │           │
 │                          └──────────────────────────────┘           │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -270,14 +270,14 @@ The prompt instructs Gemini to return **only strict JSON** (no markdown, no pros
 ### Data Flow
 
 ```
-┌──────────┐  POST /assignments      ┌──────────┐
+┌──────────┐  POST /assignments     ┌──────────┐
 │          │ ─────────────────────► │          │  save draft
-│          │                        │  Express  │ ──────────► MongoDB
-│  Next.js │  POST /confirm         │   API     │
-│  Client  │ ─────────────────────► │  :4001    │  enqueue job
+│          │                        │  Express │ ──────────► MongoDB
+│  Next.js │  POST /confirm         │   API    │
+│  Client  │ ─────────────────────► │  :4001   │  enqueue job
 │          │                        │          │ ──────────► Redis/BullMQ
 │          │  WS assignment:*       │          │
-│          │ ◄───────────────────── │ WebSocket │ ◄──────────── Worker
+│          │ ◄───────────────────── │ WebSocket│ ◄──────────── Worker
 │          │                        └──────────┘   broadcasts
 │          │  GET /pdf                              on each stage
 │          │ ─────────────────────► PDFKit → Redis cache → binary download
@@ -302,7 +302,9 @@ The frontend uses a single **Zustand** store (`assignment-store.ts`) that models
 
 ```
 empty → builder → confirmation → generating → result
-             ▲___________________________|
+            ▲                           |
+            |___________________________|
+                    
                     (return to builder)
 ```
 

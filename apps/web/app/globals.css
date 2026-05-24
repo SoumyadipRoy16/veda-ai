@@ -575,8 +575,11 @@ button {
     grid-template-columns: 1fr;
     gap: 0;
     padding: 0;
-    height: 100vh;
-    overflow: hidden;
+    width: 100%;
+    min-height: 100dvh;
+    height: 110dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .desktop-only,
@@ -587,8 +590,10 @@ button {
   .mobile-content {
     display: flex;
     padding: 10px 12px 110px;
-    min-height: max-content;
+    min-height: calc(100dvh - 20px);
+    height: auto;
     position: relative;
+    overflow: visible;
   }
 
   .mobile-content::after {

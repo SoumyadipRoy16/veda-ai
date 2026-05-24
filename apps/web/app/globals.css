@@ -432,7 +432,6 @@ button {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .desktop-topbar,
@@ -588,7 +587,7 @@ button {
   .mobile-content {
     display: flex;
     padding: 10px 12px 110px;
-    min-height: 100vh;
+    min-height: max-content;
     position: relative;
   }
 

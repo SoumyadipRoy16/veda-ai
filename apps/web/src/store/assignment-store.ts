@@ -10,6 +10,7 @@ type AssignmentWorkspaceState = {
 	step: WorkflowStep;
 	questionTypeCatalog: QuestionTypeOption[];
 	draft: AssignmentDraft;
+	assignmentCount: number;
 	assignmentId: string | null;
 	editingAssignmentId: string | null;
 	generatedPaper: GeneratedPaper | null;
@@ -17,6 +18,7 @@ type AssignmentWorkspaceState = {
 	progressMessage: string;
 	serverStage: AssignmentStage | null;
 	setQuestionTypeCatalog: (catalog: QuestionTypeOption[]) => void;
+	setAssignmentCount: (count: number) => void;
 	openBuilder: () => void;
 	returnToBuilder: () => void;
 	openEmpty: () => void;
@@ -65,6 +67,7 @@ export const useAssignmentStore = create<AssignmentWorkspaceState>()(
 			step: 'empty',
 			questionTypeCatalog: [],
 			draft: initialDraft,
+			assignmentCount: 0,
 			assignmentId: null,
 			editingAssignmentId: null,
 			generatedPaper: null,
@@ -72,6 +75,7 @@ export const useAssignmentStore = create<AssignmentWorkspaceState>()(
 			progressMessage: 'Ready to begin',
 			serverStage: null,
 			setQuestionTypeCatalog: (catalog) => set({ questionTypeCatalog: catalog }),
+			setAssignmentCount: (assignmentCount) => set({ assignmentCount }),
 			openBuilder: () => set({ step: 'builder', generatedPaper: null, progress: 0, progressMessage: 'Ready to begin', editingAssignmentId: null, assignmentId: null }),
 			returnToBuilder: () => set({ step: 'builder', generatedPaper: null, progress: 0, progressMessage: 'Ready to begin' }),
 			openEmpty: () => set({ step: 'empty', assignmentId: null, editingAssignmentId: null, generatedPaper: null, progress: 0, progressMessage: 'Ready to begin' }),
@@ -151,6 +155,7 @@ export const useAssignmentStore = create<AssignmentWorkspaceState>()(
 				step: state.step,
 				questionTypeCatalog: state.questionTypeCatalog,
 				draft: state.draft,
+				assignmentCount: state.assignmentCount,
 			}),
 		},
 	),

@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "rootDir": "../..",
+    "baseUrl": "../..",
+    "paths": {
+      "@shared/*": ["packages/shared/src/*"]
+    },
+    "noImplicitAny": false
+  },
+  "include": ["src/**/*", "../../apps/api/src/**/*", "../../packages/shared/src/**/*"]
+}

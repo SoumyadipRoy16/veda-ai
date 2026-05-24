@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { ArrowLeft, ArrowRight, CalendarPlus2, CloudUpload, Mic, Plus } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -41,6 +42,47 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 	const { addToast } = useNotificationStore();
 	const { sanitizeAndValidateFile } = useSanitization();
 	const totals = useMemo(() => calculateTotals(draft), [draft]);
+	const [validationErrors, setValidationErrors] = useState<{
+		title?: string;
+		subject?: string;
+		className?: string;
+		dueDate?: string;
+		questionTypes?: string;
+		questionRows: Array<{ type?: string; count?: string; marksPerQuestion?: string }>;
+	}>({
+		questionRows: [],
+	});
+
+	function clearValidationField(field: 'title' | 'subject' | 'className' | 'dueDate' | 'questionTypes') {
+		setValidationErrors((current) => ({ ...current, [field]: undefined }));
+	}
+
+	function validateBeforeNext() {
+		const nextErrors: typeof validationErrors = { questionRows: [] };
+
+		if (!draft.title.trim()) nextErrors.title = 'Assignment title is required.';
+		if (!draft.subject.trim()) nextErrors.subject = 'Subject is required.';
+		if (!draft.className.trim()) nextErrors.className = 'Class is required.';
+		if (!draft.dueDate.trim()) nextErrors.dueDate = 'Due date is required.';
+
+		if (draft.questionTypes.length === 0) {
+			nextErrors.questionTypes = 'Add at least one question type.';
+		}
+
+		nextErrors.questionRows = draft.questionTypes.map((row) => {
+			const rowErrors: { type?: string; count?: string; marksPerQuestion?: string } = {};
+			if (!row.type.trim()) rowErrors.type = 'Select a question type.';
+			if (!Number.isFinite(row.count) || row.count < 1) rowErrors.count = 'Questions must be at least 1.';
+			if (!Number.isFinite(row.marksPerQuestion) || row.marksPerQuestion < 1) rowErrors.marksPerQuestion = 'Marks must be at least 1.';
+			return rowErrors;
+		});
+
+		setValidationErrors(nextErrors);
+
+		const hasRowErrors = nextErrors.questionRows.some((row) => Boolean(row.type || row.count || row.marksPerQuestion));
+		const hasErrors = Boolean(nextErrors.title || nextErrors.subject || nextErrors.className || nextErrors.dueDate || nextErrors.questionTypes || hasRowErrors);
+		return !hasErrors;
+	}
 
 	async function handleFileChange(file: File | null) {
 		if (!file) {
@@ -62,13 +104,22 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 
 	return (
 		<div className={`assignment-builder assignment-builder-${variant}`}>
-			<div className="builder-header">
-				<span className="status-dot" />
-				<div>
+			{variant === 'mobile' ? (
+				<div className="builder-mobile-header">
+					<button type="button" className="builder-mobile-back-button" onClick={onPrevious} aria-label="Back to assignments">
+						<ArrowLeft size={18} strokeWidth={2} />
+					</button>
 					<h1>Create Assignment</h1>
-					<p>Set up a new assignment for your students.</p>
 				</div>
-			</div>
+			) : (
+				<div className="builder-header">
+					<span className="status-dot" />
+					<div>
+						<h1>Create Assignment</h1>
+						<p>Set up a new assignment for your students.</p>
+					</div>
+				</div>
+			)}
 
 			<div className="builder-progress-line" aria-hidden="true">
 				<span />
@@ -83,15 +134,42 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 				<div className="builder-meta-grid">
 					<label className="builder-field">
 						<span>Assignment Title</span>
-						<input value={draft.title} onChange={(event) => updateDraftField('title', event.target.value)} placeholder="Enter assignment title" />
+						<input
+							className={validationErrors.title ? 'builder-field-input-error' : ''}
+							value={draft.title}
+							onChange={(event) => {
+								updateDraftField('title', event.target.value);
+								clearValidationField('title');
+							}}
+							placeholder="Enter assignment title"
+						/>
+						{validationErrors.title ? <small className="builder-field-error">{validationErrors.title}</small> : null}
 					</label>
 					<label className="builder-field">
 						<span>Subject</span>
-						<input value={draft.subject} onChange={(event) => updateDraftField('subject', event.target.value)} placeholder="Enter subject" />
+						<input
+							className={validationErrors.subject ? 'builder-field-input-error' : ''}
+							value={draft.subject}
+							onChange={(event) => {
+								updateDraftField('subject', event.target.value);
+								clearValidationField('subject');
+							}}
+							placeholder="Enter subject"
+						/>
+						{validationErrors.subject ? <small className="builder-field-error">{validationErrors.subject}</small> : null}
 					</label>
 					<label className="builder-field">
 						<span>Class</span>
-						<input value={draft.className} onChange={(event) => updateDraftField('className', event.target.value)} placeholder="Enter class" />
+						<input
+							className={validationErrors.className ? 'builder-field-input-error' : ''}
+							value={draft.className}
+							onChange={(event) => {
+								updateDraftField('className', event.target.value);
+								clearValidationField('className');
+							}}
+							placeholder="Enter class"
+						/>
+						{validationErrors.className ? <small className="builder-field-error">{validationErrors.className}</small> : null}
 					</label>
 				</div>
 
@@ -133,9 +211,18 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 			<label className="builder-field due-date-field">
 				<span>Due Date</span>
 				<div className="date-input-wrap">
-					<input type="date" value={draft.dueDate} onChange={(event) => updateDraftField('dueDate', event.target.value)} />
+					<input
+						className={validationErrors.dueDate ? 'builder-field-input-error' : ''}
+						type="date"
+						value={draft.dueDate}
+						onChange={(event) => {
+							updateDraftField('dueDate', event.target.value);
+							clearValidationField('dueDate');
+						}}
+					/>
 					<CalendarPlus2 size={22} />
 				</div>
+				{validationErrors.dueDate ? <small className="builder-field-error">{validationErrors.dueDate}</small> : null}
 			</label>
 
 			<div className="question-table-header" aria-hidden="true">
@@ -143,6 +230,7 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 				<span>No. of Questions</span>
 				<span>Marks</span>
 			</div>
+			{validationErrors.questionTypes ? <p className="question-section-error">{validationErrors.questionTypes}</p> : null}
 
 			<div className="question-list">
 				{draft.questionTypes.map((row, index) => (
@@ -151,6 +239,7 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 						index={index}
 						row={row}
 						questionTypes={questionTypeCatalog}
+						validationError={validationErrors.questionRows[index]?.type || validationErrors.questionRows[index]?.count || validationErrors.questionRows[index]?.marksPerQuestion}
 						onTypeChange={(value) => {
 							const selected = questionTypeCatalog.find((item) => item.type === value);
 							updateQuestionType(index, {
@@ -158,9 +247,25 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 								marksPerQuestion: selected?.defaultMarksPerQuestion ?? row.marksPerQuestion,
 								difficulty: selected?.defaultDifficulty ?? row.difficulty,
 							});
+							setValidationErrors((current) => ({
+								...current,
+								questionRows: current.questionRows.map((item, currentIndex) => (currentIndex === index ? { ...item, type: undefined } : item)),
+							}));
 						}}
-						onCountChange={(value) => updateQuestionType(index, { count: value })}
-						onMarksChange={(value) => updateQuestionType(index, { marksPerQuestion: value })}
+						onCountChange={(value) => {
+							updateQuestionType(index, { count: value });
+							setValidationErrors((current) => ({
+								...current,
+								questionRows: current.questionRows.map((item, currentIndex) => (currentIndex === index ? { ...item, count: undefined } : item)),
+							}));
+						}}
+						onMarksChange={(value) => {
+							updateQuestionType(index, { marksPerQuestion: value });
+							setValidationErrors((current) => ({
+								...current,
+								questionRows: current.questionRows.map((item, currentIndex) => (currentIndex === index ? { ...item, marksPerQuestion: undefined } : item)),
+							}));
+						}}
 						onRemove={() => removeQuestionType(index)}
 					/>
 				))}
@@ -197,7 +302,16 @@ export function AssignmentBuilder({ variant, onPrevious, onOpenConfirmation }: P
 					<ArrowLeft size={16} />
 					<span>Previous</span>
 				</button>
-				<button type="button" className="builder-primary-button" onClick={onOpenConfirmation}>
+				<button
+					type="button"
+					className="builder-primary-button"
+					onClick={() => {
+						if (!validateBeforeNext()) {
+							return;
+						}
+						onOpenConfirmation();
+					}}
+				>
 					<span>Next</span>
 					<ArrowRight size={16} />
 				</button>

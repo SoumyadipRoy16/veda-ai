@@ -34,8 +34,10 @@ async function analyzeReferenceDocument(dataUrl: string, mimeType: string): Prom
 		const analysis = response.response.text();
 		return analysis || '';
 	} catch (error) {
-		console.error('Failed to analyze reference document:', error);
-		return '';
+		// Provide a clearer message for network / API failures
+		const msg = error instanceof Error ? error.message : String(error);
+		console.error('Failed to analyze reference document (Gemini):', msg);
+		throw new Error(`Gemini analysis failed: ${msg}`);
 	}
 }
 
@@ -56,11 +58,18 @@ export async function generatePaperWithGemini(request: AssignmentGenerationReque
 	const client = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 	const model = client.getGenerativeModel({ model: env.GEMINI_MODEL });
 	const structuredPrompt = buildStructuredAssignmentPrompt(request, env.GEMINI_MODEL, referenceDocumentAnalysis);
-	const response = await model.generateContent(structuredPrompt.prompt);
-	const rawText = response.response.text();
-	const jsonPayload = extractJsonPayload(rawText);
 
-	return normalizeGeneratedPaper(JSON.parse(jsonPayload));
+	try {
+		const response = await model.generateContent(structuredPrompt.prompt);
+		const rawText = response.response.text();
+		const jsonPayload = extractJsonPayload(rawText);
+
+		return normalizeGeneratedPaper(JSON.parse(jsonPayload));
+	} catch (error) {
+		const msg = error instanceof Error ? error.message : String(error);
+		console.error('Failed to generate paper with Gemini:', msg);
+		throw new Error(`Gemini generation failed: ${msg}`);
+	}
 }
 
 export {};

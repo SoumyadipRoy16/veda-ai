@@ -3,12 +3,12 @@
 import { ArrowLeft, Filter, MoreVertical, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import type { AssignmentSummary } from '@shared/schemas/assignment';
+import type { AssignmentSummary, AssignmentStage } from '@shared/schemas/assignment';
 import type { WebSocketEventPayloadMap } from '@shared/schemas/websocket';
 
 import { useAssignmentStore } from '../../store/assignment-store';
 import { useNotificationStore } from '../../store/notification-store';
-import { confirmAssignmentGeneration, createAssignmentDraft, deleteAssignment, fetchAssignments, fetchQuestionTypes, getAssignmentPdfUrl, getGeneratedPaper, regenerateAssignment, updateAssignmentDraft } from '../../lib/api';
+import { confirmAssignmentGeneration, createAssignmentDraft, deleteAssignment, fetchAssignments, fetchQuestionTypes, getAssignmentPdfUrl, getGeneratedPaper, regenerateAssignment, updateAssignmentDraft, getAssignment } from '../../lib/api';
 import { createWorkflowSocket } from '../../lib/websocket';
 import { AssignmentBuilder } from './assignment-builder';
 import { AssignmentConfirmation } from './assignment-confirmation';
@@ -47,6 +47,7 @@ export function AssignmentWorkspace({ variant }: Props) {
 		openGenerating,
 		openResult,
 		setAssignmentId,
+		setAssignmentCount,
 		setGeneratedPaper,
 		setGenerationProgress,
 		draft,
@@ -65,6 +66,8 @@ export function AssignmentWorkspace({ variant }: Props) {
 		try {
 			const records = await fetchAssignments();
 			setAssignments(records);
+			// Keep sidebar badge in sync with completed assignments count
+			setAssignmentCount(records.filter((assignment) => assignment.status === 'completed').length);
 			setAssignmentLoadError(null);
 		} catch {
 			setAssignmentLoadError('Unable to load assignments from MongoDB right now.');
@@ -95,6 +98,12 @@ export function AssignmentWorkspace({ variant }: Props) {
 	}, []);
 
 	useEffect(() => {
+		if (step === 'empty') {
+			void refreshAssignments();
+		}
+	}, [step]);
+
+	useEffect(() => {
 		if (!assignmentId) {
 			return;
 		}
@@ -106,18 +115,40 @@ export function AssignmentWorkspace({ variant }: Props) {
 
 			if (event.type === 'assignment:processing') {
 				const payload = event.data as WebSocketEventPayloadMap['assignment:processing'];
-				setGenerationProgress(payload.progress, payload.progress >= 80 ? 'Formatting assignment' : 'Cooking the paper', 'generating');
+				// Use server-provided progressMessage when available; otherwise derive a concise message.
+				const friendlyMessage = (payload as any).progressMessage ?? (payload.progress >= 80 ? 'Formatting assignment' : 'Generating content');
+				setGenerationProgress(payload.progress, friendlyMessage, 'generating');
 			}
 
 			if (event.type === 'assignment:completed') {
 				setGenerationProgress(100, 'Assignment ready', 'ready');
 				void refreshAssignments();
-				openResult();
+				// Fetch the generated paper from the API and open the result view
+				(async () => {
+					try {
+						const resp = await getGeneratedPaper(assignmentId);
+						setGeneratedPaper(resp.paper);
+						openResult();
+					} catch (err) {
+						console.error('Unable to fetch generated paper after completion event', err);
+						openResult();
+					}
+				})();
 			}
 		});
 
 		return () => socket.close();
 	}, [assignmentId, openResult, setGenerationProgress]);
+
+	useEffect(() => {
+		// Listen for global assignment updates (dispatched by top-level socket) and refresh list
+		const handler = (event: Event) => {
+			void refreshAssignments();
+		};
+
+		window.addEventListener('assignment:updated', handler as EventListener);
+		return () => window.removeEventListener('assignment:updated', handler as EventListener);
+	}, []);
 
 	async function handleGenerate() {
 		if (!draft.title.trim() || !draft.subject.trim() || !draft.className.trim() || !draft.dueDate.trim() || !draft.instructions.trim() || draft.questionTypes.length === 0) {
@@ -135,10 +166,50 @@ export function AssignmentWorkspace({ variant }: Props) {
 			void refreshAssignments();
 			setGenerationProgress(35, 'Cooking the assignment', 'generating');
 			const response = await confirmAssignmentGeneration(saved.assignment.id);
-			setGeneratedPaper(response.generatedPaper);
-			void refreshAssignments();
-			setGenerationProgress(100, 'Assignment ready', 'ready');
-			openResult();
+			// If the API returned a generated paper (synchronous processing), show it immediately.
+			if (response.generatedPaper) {
+				setGeneratedPaper(response.generatedPaper);
+				void refreshAssignments();
+				setGenerationProgress(100, 'Assignment ready', 'ready');
+				openResult();
+			} else {
+				// Queued for background processing — keep showing the generating view and wait for websocket events.
+				addToast('Assignment queued for background generation. Waiting for worker to finish...', 'info');
+				// Start a polling fallback to update progress in case websocket messages are missed.
+				let stopped = false;
+				const poll = async () => {
+					if (stopped) return;
+					try {
+						const latest = await getAssignment(saved.assignment.id);
+						const assign = latest.assignment;
+						if (assign.progress != null) {
+							setGenerationProgress(assign.progress, (assign.progressMessage as string) ?? 'Processing', (assign.stage as AssignmentStage) ?? 'generating');
+						}
+						if (assign.status === 'completed') {
+							stopped = true;
+							if (assign.generatedPaperId) {
+								try {
+									const resp = await getGeneratedPaper(saved.assignment.id);
+									setGeneratedPaper(resp.paper);
+								} catch {}
+							}
+							setGenerationProgress(100, 'Assignment ready', 'ready');
+							openResult();
+							return;
+						}
+						if (assign.status === 'failed') {
+							stopped = true;
+							addToast('Assignment generation failed. See assignment list for details.', 'error');
+							openBuilder();
+							return;
+						}
+					} catch (err) {
+						// ignore transient errors and retry
+					}
+					setTimeout(poll, 2000);
+				};
+				void poll();
+			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Unable to create assignment';
 			addToast(message, 'error');

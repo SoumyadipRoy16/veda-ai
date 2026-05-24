@@ -33,22 +33,26 @@ function classLabel(className: string) {
 export function GeneratedPaperView({ variant, paper, onRegenerate, onDownload }: Props) {
 	let questionNumber = 0;
 	const displayClassName = classLabel(paper.className);
+	const completionMessage = `Certainly! Your ${paper.subject} paper for Class ${displayClassName} is ready with ${paper.sections.length} sections and ${paper.totalMarks} total marks.`;
+	const nextActionMessage = 'Regenerate if you want a different balance, or download the PDF to share it now.';
 
 	return (
 		<div className={`generated-paper-layout generated-paper-layout-${variant}`}>
 			<div className="generated-paper-actions">
 				<div className="generated-paper-note">
-					<ShieldCheck size={14} />
-					<span>Formatted paper is ready for download and regeneration.</span>
+					<div className="generated-paper-note-copy">
+						<p className="generated-paper-note-title">{completionMessage}</p>
+						<p className="generated-paper-note-body">{nextActionMessage}</p>
+					</div>
 				</div>
 				<div className="generated-paper-button-row">
-					<button type="button" className="paper-action-button paper-action-secondary" onClick={onRegenerate}>
+					<button type="button" className="paper-action-button paper-action-secondary" onClick={onRegenerate} aria-label="Regenerate assignment">
 						<RefreshCw size={14} />
-						<span>Regenerate</span>
+						<span className="paper-action-label">Regenerate</span>
 					</button>
-					<button type="button" className="paper-action-button paper-action-primary" onClick={onDownload}>
+					<button type="button" className="paper-action-button paper-action-primary" onClick={onDownload} aria-label="Download as PDF">
 						<Download size={14} />
-						<span>Download as PDF</span>
+						<span className="paper-action-label">Download as PDF</span>
 					</button>
 				</div>
 			</div>

@@ -20,6 +20,9 @@ import { SchoolAvatar } from '../src/components/avatar/school-avatar';
 import { AssignmentWorkspace } from '../src/components/assignment/assignment-workspace';
 import { ToastContainer } from '../src/components/toast-container';
 import { useAssignmentStore } from '../src/store/assignment-store';
+import { useEffect } from 'react';
+import { createWorkflowSocket } from '../src/lib/websocket';
+import { fetchAssignments } from '../src/lib/api';
 
 const sidebarItems = [
   { icon: Grid2X2, label: 'Home' },
@@ -40,7 +43,35 @@ export default function HomePage() {
   const openBuilder = useAssignmentStore((state) => state.openBuilder);
   const openEmpty = useAssignmentStore((state) => state.openEmpty);
   const step = useAssignmentStore((state) => state.step);
+  const assignmentCount = useAssignmentStore((state) => state.assignmentCount);
+  const setAssignmentCount = useAssignmentStore((state) => state.setAssignmentCount);
   const assignmentListOpen = step === 'empty';
+
+  useEffect(() => {
+    const socket = createWorkflowSocket((event) => {
+      // React to queue/processing/completion/failure events by refreshing assignments
+      if (event.type === 'assignment:queued' || event.type === 'assignment:completed' || event.type === 'assignment:failed') {
+        // Update assignment count in the sidebar (use total assignments)
+        void (async () => {
+          try {
+            const records = await fetchAssignments();
+            setAssignmentCount(records.filter((a) => a.status === 'completed').length);
+          } catch (e) {
+            // ignore
+          }
+        })();
+
+        // Notify other components (like AssignmentWorkspace) to refresh their list
+        try {
+          window.dispatchEvent(new CustomEvent('assignment:updated', { detail: { type: event.type, data: event.data } }));
+        } catch {
+          // ignore (SSR or non-browser)
+        }
+      }
+    });
+
+    return () => socket.close();
+  }, [setAssignmentCount]);
 
   return (
     <main className="page-shell">
@@ -67,6 +98,7 @@ export default function HomePage() {
                 <Icon size={16} strokeWidth={2} />
               </span>
               <span className="nav-label">{label}</span>
+              {assignmentList && assignmentCount > 0 ? <span className="nav-badge">{assignmentCount}</span> : null}
             </button>
           ))}
         </nav>

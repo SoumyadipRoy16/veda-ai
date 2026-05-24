@@ -12,7 +12,8 @@ export function getRedisClient() {
 	if (!redisClient) {
 		redisClient = new Redis(env.REDIS_URL, {
 			lazyConnect: true,
-			maxRetriesPerRequest: 1,
+			// For BullMQ compatibility this must be null (BullMQ will manage retries)
+			maxRetriesPerRequest: null,
 			enableAutoPipelining: true,
 		});
 	}

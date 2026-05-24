@@ -69,7 +69,7 @@ export async function confirmAssignmentGeneration(assignmentId: string) {
 }
 
 export async function getAssignment(assignmentId: string) {
-	return requestJson<{ assignment: AssignmentSummary & { generatedPaperId?: string } }>(`/assignments/${assignmentId}`);
+	return requestJson<{ assignment: AssignmentSummary & { generatedPaperId?: string; progress?: number; progressMessage?: string; stage?: string } }>(`/assignments/${assignmentId}`);
 }
 
 export async function getGeneratedPaper(assignmentId: string) {

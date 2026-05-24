@@ -180,8 +180,8 @@ export async function processAssignmentGeneration(assignmentId: string) {
 	}
 
 	try {
-		await AssignmentModel.findByIdAndUpdate(assignmentId, { status: 'processing', stage: 'generating', progress: 20, progressMessage: 'Preparing AI prompt' });
-		broadcastSocketEvent('assignment:processing', { assignmentId, progress: 20 });
+		await AssignmentModel.findByIdAndUpdate(assignmentId, { status: 'processing', stage: 'generating', progress: 20, progressMessage: 'Preparing prompt' });
+		broadcastSocketEvent('assignment:processing', { assignmentId, progress: 20, progressMessage: 'Preparing prompt' });
 
 		const questionTypeCatalog = Array.isArray(assignment.questionTypeSnapshot) ? (assignment.questionTypeSnapshot as QuestionTypeOption[]) : [];
 		const request: AssignmentGenerationRequest = {
@@ -204,14 +204,14 @@ export async function processAssignmentGeneration(assignmentId: string) {
 			className: assignment.className,
 		};
 
-		await AssignmentModel.findByIdAndUpdate(assignmentId, { progress: 40, progressMessage: 'Cooking structured sections' });
-		broadcastSocketEvent('assignment:processing', { assignmentId, progress: 40 });
+		await AssignmentModel.findByIdAndUpdate(assignmentId, { progress: 40, progressMessage: 'Generating assignment content' });
+		broadcastSocketEvent('assignment:processing', { assignmentId, progress: 40, progressMessage: 'Generating assignment content' });
 
 		const generatedPaper = await generatePaperWithGemini(request);
 		const normalizedPaper = ensurePersistableAnswerKey(generatedPaper);
 
-		await AssignmentModel.findByIdAndUpdate(assignmentId, { progress: 75, progressMessage: 'Formatting question paper' });
-		broadcastSocketEvent('assignment:processing', { assignmentId, progress: 75 });
+		await AssignmentModel.findByIdAndUpdate(assignmentId, { progress: 75, progressMessage: 'Formatting output' });
+		broadcastSocketEvent('assignment:processing', { assignmentId, progress: 75, progressMessage: 'Formatting output' });
 
 		const paperDocument = await GeneratedPaperModel.create({
 			assignmentId,

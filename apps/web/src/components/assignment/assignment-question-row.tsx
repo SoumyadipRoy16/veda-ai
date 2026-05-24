@@ -8,6 +8,7 @@ type Props = {
 	row: QuestionConfig;
 	index: number;
 	questionTypes: QuestionTypeOption[];
+	validationError?: string;
 	onTypeChange: (value: string) => void;
 	onCountChange: (value: number) => void;
 	onMarksChange: (value: number) => void;
@@ -18,15 +19,16 @@ export function AssignmentQuestionRow({
 	row,
 	index,
 	questionTypes,
+	validationError,
 	onTypeChange,
 	onCountChange,
 	onMarksChange,
 	onRemove,
 }: Props) {
 	return (
-		<div className="question-row">
+		<div className={`question-row ${validationError ? 'question-row-error' : ''}`}>
 			<div className="question-row-select-wrap">
-				<select className="question-row-select" value={row.type} onChange={(event) => onTypeChange(event.target.value)}>
+				<select className={`question-row-select ${validationError ? 'question-row-select-error' : ''}`} value={row.type} onChange={(event) => onTypeChange(event.target.value)}>
 					<option value="">Select question type</option>
 					{questionTypes.map((option) => (
 						<option value={option.type} key={option.type}>
@@ -68,6 +70,8 @@ export function AssignmentQuestionRow({
 						</div>
 					</div>
 			</div>
+
+			{validationError ? <p className="question-row-error-message">{validationError}</p> : null}
 
 		</div>
 	);

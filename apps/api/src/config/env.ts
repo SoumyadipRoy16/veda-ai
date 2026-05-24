@@ -35,6 +35,7 @@ const envSchema = z.object({
 	ASSIGNMENT_STORAGE: z.enum(['database', 'memory']).default('database'),
 	UPLOAD_MAX_MB: z.coerce.number().int().positive().default(10),
 	CORS_ORIGIN: z.string().default('*'),
+	WORKER_ENABLED: z.coerce.boolean().default(false),
 });
 
 export const env = envSchema.parse(process.env);

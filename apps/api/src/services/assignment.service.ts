@@ -3,6 +3,8 @@ import type { AssignmentDraft, QuestionTypeOption } from '@shared/schemas/assign
 import { AssignmentModel } from '../models/Assignment';
 import { GeneratedPaperModel } from '../models/GeneratedPaper';
 import { createAssignmentDraft, deleteAssignmentRecord, listAssignments, processAssignmentGeneration, queueAssignmentGeneration, toAssignmentSummary, updateAssignmentDraft } from './generation.service';
+import { enqueueAssignmentGeneration } from '../queues/generation.queue';
+import { env } from '../config/env';
 
 export async function getQuestionTypes(questionTypes: QuestionTypeOption[]) {
 	return questionTypes;
@@ -26,6 +28,23 @@ export { listAssignments };
 
 export async function confirmAssignmentGeneration(assignmentId: string) {
 	const assignment = await queueAssignmentGeneration(assignmentId);
+	// If Redis is configured, try to enqueue a background job so a worker can pick it up.
+	if (env.REDIS_URL) {
+		try {
+			await enqueueAssignmentGeneration(assignment._id.toString());
+			console.log('Enqueued assignment generation job for', assignment._id.toString());
+		} catch (err) {
+			console.error('Failed to enqueue assignment generation job', err);
+		}
+	}
+	// If a standalone worker is enabled and Redis is configured, do not process synchronously here.
+	if (env.REDIS_URL && env.WORKER_ENABLED) {
+		return {
+			assignment: toAssignmentSummary(assignment as never),
+			generatedPaper: null,
+		};
+	}
+	// Fallback / default: process synchronously (preserves existing behaviour when worker not enabled)
 	const generatedPaper = await processAssignmentGeneration(assignmentId);
 	return {
 		assignment: toAssignmentSummary(assignment as never),

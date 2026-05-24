@@ -8,7 +8,7 @@ export type WebSocketEventTopic = 'generation' | 'assignment';
 
 export interface WebSocketEventPayloadMap {
 	'assignment:queued': { assignmentId: string };
-	'assignment:processing': { assignmentId: string; progress: number };
+	'assignment:processing': { assignmentId: string; progress: number; progressMessage?: string };
 	'assignment:completed': { assignmentId: string; paperId: string };
 	'assignment:failed': { assignmentId: string; reason: string };
 }

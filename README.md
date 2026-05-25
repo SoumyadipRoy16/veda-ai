@@ -4,6 +4,10 @@
 
 <br /><br />
 
+<img width="1919" height="868" alt="image" src="https://github.com/user-attachments/assets/951c3868-45e9-4265-872c-42a967fb3736" />
+
+<br /><br />
+
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15.3-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
